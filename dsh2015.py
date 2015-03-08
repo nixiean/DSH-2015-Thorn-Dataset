@@ -3,29 +3,50 @@ import csv
 from win32api import Sleep
 from csv import Dialect
 import sys
+import extractPrice
+import outputStats
 
 csv.field_size_limit(sys.maxsize)
+inputFile = 'escort_states.tsv'
+#outputFile = 'escort_states.csv'
 
-inputFile = 'states.tsv'
+stateData = {}
+yearStats = {}
 
-statesUSA = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'District Of Columbia', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming']
-states = {}
-location = set()
+def processRow(line,lineSize):
+    if stateData.has_key(line[1]):
+        yearStats =  stateData[line[1]]
+    else:
+        yearStats = {}
+    date = "NA"
+    if lineSize > 6:
+        date = line[6][:4]
+    price = extractPrice.get_prices(line[3])
+    if(yearStats.has_key(date)):
+        if price != 0:
+            priceList = yearStats[date]         
+            priceList.append(price)
+            yearStats[date] = priceList
+    else:
+        priceList = []
+        if price!=0: 
+            priceList.append(price)
+        yearStats[date] = priceList
+    stateData[line[1]] = yearStats  
 
 # Function to read the data
 def read_data(data):
-    i = 0
+    #fOutput = csv.writer(open(outputFile,"wb"), dialect="excel-tab")
     fInput = csv.reader(open(inputFile,"rU"), dialect="excel-tab")
+    i = 0
     for line in fInput:
-        i = i+1
-        print i
-        print line
-        #if len(line) > 1:
-        #    if (line[1] in statesUSA):
-        #            states[line[1]] = states[line[1]] + 1 
-              
-    print states         
-    
+        lineSize =  len(line)
+        if lineSize > 1:
+            i = i + 1
+            print i
+            processRow(line,lineSize)
+    outputStats.printStats(stateData)
+        
 def main():
     data = []
     #Read the data
@@ -33,4 +54,4 @@ def main():
   
 # Standard code that calls the main() function.
 if __name__ == '__main__':
-  main()
+    main()
